@@ -64,7 +64,16 @@ var ajax = (function(){
 
         // Set up xhr options and open
         var method      = (opts.method) ? opts.method.toUpperCase() : 'GET',
-            isAsync     = (opts.async) ? opts.async : true;
+            isAsync     = (opts.hasOwnProperty('async') && typeof(opts.async) == 'boolean') ? opts.async : true;
+
+        if(isAsync){
+            // Set the responseType if provided, defaults to '' which will cause
+            // browser to parse response as DOMString.
+            // Attempting to set responseType for synchronous requests will throw
+            // an InvalidAccessError
+            // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/responseType
+            xhr.responseType = opts.responseType || '';
+        }
 
         xhr.open(method, opts.url, isAsync, opts.username, opts.password);
 
@@ -89,13 +98,16 @@ var ajax = (function(){
 
             // Handle errors
             if(xhr.status >= 400){
-                console.log(xhr);
                 opts.err(xhr, xhr.status, xhr.statusText);
                 return;
             }
 
             // Handle success
-            var res = xhr.responseText;
+            // Use xhr.response instead of xhr.responseText
+            // When using xhr.response, the type varies depending on xhr.responseType set by user.
+            // xhr.responseText is not available if xhr.responseType is anything other than '', 'document', or 'moz-chunked-text'.
+            // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/response
+            var res = xhr.response;
             if(opts.dataType){
                 var t = opts.dataType.toLowerCase();
 
