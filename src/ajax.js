@@ -66,6 +66,8 @@ var ajax = (function(){
         var method      = (opts.method) ? opts.method.toUpperCase() : 'GET',
             isAsync     = (opts.hasOwnProperty('async') && typeof(opts.async) == 'boolean') ? opts.async : true;
 
+        xhr.open(method, opts.url, isAsync, opts.username, opts.password);
+        
         if(isAsync){
             // Set the responseType if provided, defaults to '' which will cause
             // browser to parse response as DOMString.
@@ -75,7 +77,6 @@ var ajax = (function(){
             xhr.responseType = opts.responseType || '';
         }
 
-        xhr.open(method, opts.url, isAsync, opts.username, opts.password);
 
         // Set content type if we are working with form data
         if(opts.data){
