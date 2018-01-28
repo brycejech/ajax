@@ -88,7 +88,7 @@ var ajax = (function(){
             if(_getType(opts.headers) !== 'object'){
                 throw new Error('Headers must be of type array');
             }
-            for(header in opts.headers){
+            for(var header in opts.headers){
                 xhr.setRequestHeader(header, opts.headers[header]);
             }
         }
