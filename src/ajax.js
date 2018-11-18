@@ -67,7 +67,7 @@ var ajax = (function(){
             isAsync     = (opts.hasOwnProperty('async') && typeof(opts.async) == 'boolean') ? opts.async : true;
 
         xhr.open(method, opts.url, isAsync, opts.username, opts.password);
-        
+
         if(isAsync){
             // Set the responseType if provided, defaults to '' which will cause
             // browser to parse response as DOMString.
@@ -99,7 +99,7 @@ var ajax = (function(){
 
             // Handle errors
             if(xhr.status >= 400){
-                opts.err(xhr, xhr.status, xhr.statusText);
+                opts.error(xhr, xhr.status, xhr.statusText);
                 return;
             }
 
