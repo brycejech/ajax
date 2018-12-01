@@ -12,40 +12,10 @@ var ajax = (function(){
         function () { return new ActiveXObject('Microsoft.XMLHTTP') }
     ];
 
-    // Helper fn to get appropriate xhr object
-    function _getRequestObject(){
-        var xmlhttp = false;
-
-        for(var i = 0, len = factories.length; i < len; i++){
-            try{
-                xmlhttp = factories[i]();
-            }
-            catch(e){
-                continue;
-            }
-            break;
-        }
-        return xmlhttp;
-    }
-
-    // Helper fn for type checking
-    function _getType(thing){
-        if(typeof thing === 'undefined'){
-            return 'undefined';
-        }
-        else if(typeof thing === 'number'){
-            if(isNaN(thing)){
-                return 'NaN';
-            }
-            return 'number';
-        }
-        return Object.prototype.toString.call(thing).match(/\[\w+\s(\w+)]/)[1].toLowerCase();
-    }
-
 
     return function ajax(opts){
         // Options must be an object
-        if(!opts || _getType(opts) != 'object'){
+        if(!opts || _type(opts) != 'object'){
             throw new Error('Options must be an object');
         }
 
@@ -63,10 +33,49 @@ var ajax = (function(){
         xhr.withCredentials = opts.withCredentials || false;
 
         // Set up xhr options and open
-        var method      = (opts.method) ? opts.method.toUpperCase() : 'GET',
-            isAsync     = (opts.hasOwnProperty('async') && typeof(opts.async) == 'boolean') ? opts.async : true;
+        var method  = (opts.method) ? opts.method.toUpperCase() : 'GET',
+            isAsync = (opts.hasOwnProperty('async') && typeof(opts.async) == 'boolean') ? opts.async : true;
 
-        xhr.open(method, opts.url, isAsync, opts.username, opts.password);
+        var url  = opts.url,
+            data = opts.data,
+            contentType = opts.contentType || 'application/x-www-form-urlencoded; charset=UTF-8';
+
+
+        if(method === 'GET' || method === 'HEAD'){
+
+            if(data){
+                // Prepare data object
+                if(_type(data) === 'object'){
+                    data = _parameterize(data);
+                    url += '?' + data;
+                }
+                // Assume user has prepared
+                else{
+                    url += data;
+                }
+            }
+        }
+        else{ // POST, PUT, PATCH, DELETE, ETC
+
+            // Ensure data is serialized if sending form data
+
+            // URL Encoded
+            if(contentType.indexOf('x-www-form-urlencoded') !== -1){
+                if(typeof data === 'object'){
+                    data = _parameterize(data);
+                }
+            }
+            // JSON Encoded
+            else if(contentType.indexOf('application/json') !== -1){
+                if(typeof data === 'object'){
+                    data = JSON.stringify(data);
+                }
+            }
+        }
+
+        xhr.open(method, url, isAsync, opts.username, opts.password);
+
+        xhr.setRequestHeader('Content-Type', contentType);
 
         if(isAsync){
             // Set the responseType if provided, defaults to '' which will cause
@@ -77,16 +86,10 @@ var ajax = (function(){
             xhr.responseType = opts.responseType || '';
         }
 
-
-        // Set content type if we are working with form data
-        if(opts.data){
-            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-        }
-
         // Pass along any supplied headers
         if(opts.headers){
-            if(_getType(opts.headers) !== 'object'){
-                throw new Error('Headers must be of type array');
+            if(_type(opts.headers) !== 'object'){
+                throw new Error('Headers option must be an object');
             }
             for(var header in opts.headers){
                 xhr.setRequestHeader(header, opts.headers[header]);
@@ -99,7 +102,7 @@ var ajax = (function(){
 
             // Handle errors
             if(xhr.status >= 400){
-                opts.error(xhr, xhr.status, xhr.statusText);
+                _type(opts.error) === 'function' && (opts.error(xhr, xhr.status, xhr.statusText));
                 return;
             }
 
@@ -118,12 +121,48 @@ var ajax = (function(){
                         break;
                 }
             }
-            opts.success(res);
-
+            _type(opts.success) === 'function' && (opts.success(res));
         }
 
         // Send the request
-        xhr.send(opts.data);
+        xhr.send(data);
+    }
+
+    // Helper fn to get appropriate xhr object
+    function _getRequestObject(){
+        var xmlhttp = false;
+
+        for(var i = 0, len = factories.length; i < len; i++){
+            try{
+                xmlhttp = factories[i]();
+            }
+            catch(e){
+                continue;
+            }
+            break;
+        }
+        return xmlhttp;
+    }
+
+    // Helper fn for type checking
+    function _type(thing){
+        return Object.prototype.toString.call(thing).match(/\[object (.*)\]/)[1].toLowerCase();
+    }
+
+    function _parameterize(o){
+        if(typeof o === 'string') return o;
+
+        var queryStringParts = [];
+
+        for(var key in o){
+            var str = encodeURIComponent(key) + '=' + encodeURIComponent(o[key]);
+            queryStringParts.push(str);
+        }
+
+        if(queryStringParts.length){
+            return queryStringParts.join('&');
+        }
+        return '';
     }
 
 })();
