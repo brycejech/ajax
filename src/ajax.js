@@ -83,7 +83,12 @@ var ajax = (function(){
             // Attempting to set responseType for synchronous requests will throw
             // an InvalidAccessError
             // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/responseType
-            xhr.responseType = opts.responseType || '';
+            var supportedTypes = [ '', 'text', 'arrayBuffer', 'blob', 'document', 'json' ];
+            var dataType = '';
+            if(opts.hasOwnProperty('dataType')){
+                if(supportedTypes.indexOf(opts.dataType) !== -1) dataType = opts.dataType;
+            }
+            xhr.responseType = dataType;
         }
 
         // Pass along any supplied headers
