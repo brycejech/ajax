@@ -117,15 +117,23 @@ var ajax = (function(){
             // xhr.responseText is not available if xhr.responseType is anything other than '', 'document', or 'moz-chunked-text'.
             // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/response
             var res = xhr.response;
-            if(opts.dataType){
-                var t = opts.dataType.toLowerCase();
 
-                switch(t){
-                    case 'json':
-                        res = JSON.parse(res);
-                        break;
+            if(opts.dataType){
+                // Determine if response needs to be parsed and act accordingly
+                if(_type(res) === 'string'){
+                    var t = opts.dataType.toLowerCase();
+
+                    switch(t){
+                        case 'json':
+                            res = JSON.parse(res);
+                            break;
+                        default:
+                            break;
+                    }
                 }
             }
+
+            // Call the success handler
             _type(opts.success) === 'function' && (opts.success(res));
         }
 
